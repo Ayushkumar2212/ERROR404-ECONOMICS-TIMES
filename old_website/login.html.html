@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeScript AI | Secure Healthcare Access</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus+Jakarta+Sans', sans-serif;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 64, 175, 0.7)), 
+                        url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .input-focus:focus {
+            border-color: #0d9488;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+            outline: none;
+        }
+
+        .map-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        input:required:invalid {
+            border-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-6">
+
+    <div class="glass-card w-full max-w-5xl rounded-[2rem] overflow-hidden flex flex-col lg:flex-row transition-all duration-500">
+        
+        <div class="w-full lg:w-3/5 p-10">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="bg-teal-600 p-2 rounded-xl">
+                    <i class="fas fa-microchip text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800">SafeScript <span class="text-teal-600">AI</span></h1>
+                    <p class="text-slate-500 text-xs font-semibold uppercase tracking-widest">Advanced Healthcare Audit System</p>
+                </div>
+            </div>
+
+            <form id="safeScriptForm" class="grid grid-cols-1 md:grid-cols-2 gap-5" onsubmit="handleSubmit(event)">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Full Name *</label>
+                    <input type="text" id="regFullName" required placeholder="Enter your full name" 
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl input-focus transition-all">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Email Address <span class="text-gray-400 font-normal ml-1">(Optional)</span></label>
+                    <input type="email" id="regEmail" placeholder="example@healthcare.com" 
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl input-focus transition-all">
+                </div>
+
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Registration Role *</label>
+                    <select id="roleSelect" required onchange="toggleFields()" 
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl input-focus transition-all appearance-none">
+                        <option value="">Select Category</option>
+                        <option value="Hospitals">Hospitals</option>
+                        <option value="Clinics">Clinics</option>
+                        <option value="Pharmacists">Pharmacists</option>
+                        <option value="Health Insurance Companies">Health Insurance Companies</option>
+                        <option value="Patients aur Caregivers">Patients aur Caregivers</option>
+                        <option value="Government Health Bodies">Government Health Bodies</option>
+                    </select>
+                </div>
+
+                <div id="dynamicContainer" class="md:col-span-1 hidden">
+                    <label id="dynamicLabel" class="block text-sm font-bold text-teal-700 mb-1"></label>
+                    <input type="text" id="dynamicInput" 
+                           class="w-full px-4 py-3 bg-teal-50 border border-teal-200 rounded-xl input-focus transition-all">
+                </div>
+
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Aadhar Number (12 Digits) *</label>
+                    <input type="text" required pattern="\d{12}" maxlength="12" placeholder="XXXX XXXX XXXX" 
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl input-focus tracking-widest">
+                </div>
+
+                <div class="md:col-span-1">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Mobile Number *</label>
+                    <div class="flex">
+                        <span class="bg-slate-200 px-3 py-3 rounded-l-xl border border-r-0 border-slate-200 text-slate-600 font-bold">+91</span>
+                        <input type="tel" id="regPhone" required pattern="[6789]\d{9}" maxlength="10" placeholder="98XXXXXXXX" 
+                               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-r-xl input-focus">
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 flex gap-3">
+                    <input type="text" id="otpInput" required pattern="\d{6}" maxlength="6" placeholder="Enter 6-Digit OTP" 
+                           class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold tracking-[0.5em] input-focus">
+                    <button type="button" onclick="alert('OTP sent to your mobile! Demo OTP: 123456')" 
+                            class="bg-slate-800 text-white px-6 py-3 rounded-xl hover:bg-slate-700 transition font-bold">Get OTP</button>
+                </div>
+
+                <div class="md:col-span-2">
+                    <button type="submit" class="w-full bg-teal-600 text-white font-extrabold py-4 rounded-2xl hover:bg-teal-700 transform hover:scale-[1.01] transition-all shadow-xl shadow-teal-200">
+                        <i class="fas fa-shield-alt mr-2"></i> COMPLETE VERIFIED REGISTRATION
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="w-full lg:w-2/5 bg-slate-50 p-10 flex flex-col border-l border-slate-100">
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-slate-800"><i class="fas fa-satellite text-blue-500 mr-2"></i>Real-time GPS Sync</h3>
+                <p class="text-slate-500 text-sm">Automatic geocoding for institutional verification.</p>
+            </div>
+
+            <div class="relative flex-1 rounded-3xl overflow-hidden map-glow border-4 border-white group">
+                <iframe id="mapFrame" 
+                        class="w-full h-full grayscale-[20%] hover:grayscale-0 transition-all duration-700"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d115132.86107233!2d85.073001!3d25.594095!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f325651f035751%3A0x868c6792f694a974!2sPatna%2C%20Bihar!5e0!3m2!1sen!2sin!4v1677654321000!5m2!1sen!2sin" 
+                        allowfullscreen="" loading="lazy"></iframe>
+                <div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-blue-600 uppercase">Live Coordinates</span>
+                            <p id="geoCoords" class="text-sm font-mono font-bold text-slate-800">25.5941° N, 85.1376° E</p>
+                        </div>
+                        <div class="bg-green-100 p-2 rounded-full">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="updateLocation()" class="mt-4 text-sm font-bold text-teal-600 hover:text-teal-700 transition">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh Real-time Location
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function toggleFields() {
+            const role = document.getElementById('roleSelect').value;
+            const container = document.getElementById('dynamicContainer');
+            const label = document.getElementById('dynamicLabel');
+            const input = document.getElementById('dynamicInput');
+
+            const mapping = {
+                'Hospitals': 'Official Name of Hospital *',
+                'Clinics': 'Official Name of Clinic *',
+                'Pharmacists': 'Licensed Pharmacy Name *',
+                'Health Insurance Companies': 'Company Brand Name *'
+            };
+
+            if (mapping[role]) {
+                container.classList.remove('hidden');
+                label.innerText = mapping[role];
+                input.required = true;
+                input.placeholder = `Enter ${role} Name`;
+            } else {
+                container.classList.add('hidden');
+                input.required = false;
+            }
+        }
+
+        function updateLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    document.getElementById('geoCoords').innerText = `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+                    alert("Real-time GPS coordinates fetched and verified!");
+                }, (error) => {
+                    alert("Please enable location services for GPS Sync.");
+                });
+            }
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otpInput').value;
+            if (otp !== '123456') {
+                alert('Invalid OTP. Please use the demo OTP: 123456');
+                return;
+            }
+
+            const role = document.getElementById('roleSelect').value;
+            const fullName = document.getElementById('regFullName').value;
+            const email = document.getElementById('regEmail').value;
+            const phone = document.getElementById('regPhone').value;
+            const institution = document.getElementById('dynamicInput').value;
+
+            const userData = {
+                fullName: fullName,
+                email: email,
+                phone: phone,
+                role: role,
+                institution: institution
+            };
+            localStorage.setItem('safescript_user', JSON.stringify(userData));
+
+            let redirectUrl = '';
+            
+            switch(role) {
+                case 'Hospitals': redirectUrl = 'hospital.html'; break;
+                case 'Clinics': redirectUrl = 'client.html'; break;
+                case 'Pharmacists': redirectUrl = 'pharmacy.html'; break;
+                case 'Health Insurance Companies': redirectUrl = 'health insurance.html'; break;
+                case 'Patients aur Caregivers': redirectUrl = 'banner.html'; break;
+                case 'Government Health Bodies': redirectUrl = 'health bodies.html'; break;
+                default: 
+                    alert('Please select a valid role.');
+                    return;
+            }
+
+            alert("SafeScript AI: Login/Registration Successful! Redirecting...");
+            window.location.href = redirectUrl;
+        }
+    </script>
+
+</body>
+</html>

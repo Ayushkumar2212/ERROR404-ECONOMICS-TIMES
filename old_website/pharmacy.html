@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeScript AI | Pharmacy Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .sidebar-item:hover, .sidebar-item.active { background-color: rgba(37, 99, 235, 0.1); color: #2563EB; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .tab-content { display: none; }
+        .tab-content.active-tab { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <aside class="w-64 bg-white border-r border-gray-200 hidden lg:flex flex-col fixed h-full">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-blue-600 tracking-tight">SafeScript<span class="text-gray-800 text-sm italic ml-1">AI</span></h1>
+        </div>
+        <nav class="flex-1 px-4 space-y-1 overflow-y-auto mt-4">
+            <button onclick="switchTab('dashboard', this)" class="sidebar-item active w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-house-chimney w-6 text-left"></i> Dashboard
+            </button>
+            <button onclick="switchTab('billing', this)" class="sidebar-item w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-receipt w-6 text-left"></i> Digital Billing
+            </button>
+            <button onclick="switchTab('scanner', this)" class="sidebar-item w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-qrcode w-6 text-left"></i> AI Rx / Scanner
+            </button>
+            <button onclick="switchTab('orders', this)" class="sidebar-item w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-cart-shopping w-6 text-left"></i> Online Orders
+            </button>
+            <button onclick="switchTab('inventory', this)" class="sidebar-item w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-boxes-stacked w-6 text-left"></i> Smart Inventory
+            </button>
+            <button onclick="switchTab('profile', this)" class="sidebar-item w-full flex items-center px-4 py-3 rounded-xl text-gray-500 font-medium transition-all">
+                <i class="fa-solid fa-user-doctor w-6 text-left"></i> Profile & Maps
+            </button>
+        </nav>
+        <div class="p-4 border-t border-gray-100">
+            <a href="#" onclick="logout()" class="flex items-center px-4 py-3 text-gray-500 hover:text-red-500 transition-all">
+                <i class="fa-solid fa-right-from-bracket mr-3"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 lg:ml-64 p-8">
+        
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div class="relative w-full max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" placeholder="Search medicines or RX ID...">
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-gray-400 hover:text-blue-600 relative">
+                    <i class="fa-solid fa-bell text-xl"></i>
+                    <span class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div class="h-10 w-px bg-gray-200 mx-2"></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right">
+                        <p id="user-display-name" class="text-sm font-semibold text-gray-800 leading-none">SafeScript Admin</p>
+                        <p id="user-display-role" class="text-xs text-blue-600 font-bold mt-1 uppercase tracking-widest">Pharmacy</p>
+                    </div>
+                    <div class="relative w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center border border-blue-200 overflow-hidden cursor-pointer" onclick="switchTab('profile', document.querySelectorAll('.sidebar-item')[5])">
+                        <img id="user-display-dp" src="" class="hidden w-full h-full object-cover">
+                        <i id="user-display-icon" class="fa-solid fa-user-doctor text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="dashboard" class="tab-content active-tab">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600 text-xl">
+                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                    </div>
+                    <span class="text-green-500 text-xs font-bold">+12.5%</span>
+                </div>
+                <p class="text-gray-500 text-sm font-medium">Today's Sales</p>
+                <h3 id="dash-sales-val" class="text-2xl font-bold text-gray-800 mt-1">₹0.00</h3>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 transition" onclick="switchTab('inventory', document.querySelectorAll('.sidebar-item')[4])">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600 text-xl">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <span class="text-red-500 text-xs font-bold">Action Needed</span>
+                </div>
+                <p class="text-gray-500 text-sm font-medium">Low Stock Items</p>
+                <h3 id="dash-lowstock-val" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 transition" onclick="switchTab('orders', document.querySelectorAll('.sidebar-item')[3])">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-xl">
+                        <i class="fa-solid fa-file-medical"></i>
+                    </div>
+                    <span class="text-blue-500 text-xs font-bold">Pending</span>
+                </div>
+                <p class="text-gray-500 text-sm font-medium">Online Requests</p>
+                <h3 id="dash-orders-val" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:border-blue-300 transition" onclick="switchTab('inventory', document.querySelectorAll('.sidebar-item')[4])">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 text-xl">
+                        <i class="fa-solid fa-calendar-xmark"></i>
+                    </div>
+                    <span class="text-orange-500 text-xs font-bold">Near Expiry</span>
+                </div>
+                <p class="text-gray-500 text-sm font-medium">Expiring Soon</p>
+                <h3 id="dash-expiring-val" class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="p-6 border-b border-gray-50 flex items-center justify-between">
+                    <h2 class="text-lg font-bold text-gray-800">Recent Approved Logs</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-50">
+                                <th class="px-6 py-4 font-semibold">Details</th>
+                                <th class="px-6 py-4 font-semibold">Value</th>
+                                <th class="px-6 py-4 font-semibold">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50" id="dash-logs-list">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div onclick="switchTab('scanner', document.querySelectorAll('.sidebar-item')[2])" class="bg-blue-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-200 cursor-pointer hover:bg-blue-700 transition">
+                    <h3 class="font-bold text-lg mb-4">AI Scan Station</h3>
+                    <p class="text-blue-100 text-sm mb-6">Instantly detect medicine names from handwritten prescriptions or scan barcodes.</p>
+                    <button class="w-full py-3 bg-white text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-camera"></i> Open AI Scanner
+                    </button>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="font-bold text-gray-800 mb-4">Quick Links</h3>
+                    <div class="space-y-3">
+                        <div onclick="switchTab('billing', document.querySelectorAll('.sidebar-item')[1])" class="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 cursor-pointer">
+                            <span class="text-sm text-gray-600"><i class="fa-solid fa-plus mr-2 text-blue-500"></i> New Digital Bill</span>
+                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div> <!-- End Dashboard Box -->
+
+        <!-- Digital Billing -->
+        <div id="billing" class="tab-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-4xl">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3"><i class="fa-solid fa-receipt text-blue-600"></i> Issue Digital Bill</h2>
+                
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Pharmacy Name / Branch</label>
+                        <input type="text" id="bill-pharmacy" class="w-full p-4 mt-1 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none focus:border-blue-500 focus:bg-white" placeholder="SuperMed Pharmacy...">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Patient/Customer Name</label>
+                        <input type="text" id="bill-customer" class="w-full p-4 mt-1 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 focus:bg-white" placeholder="Optional...">
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-6 mb-4">
+                    <div class="flex justify-between items-end mb-4">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Billing Items</label>
+                        <button onclick="addBillRow()" class="text-blue-600 font-bold text-sm bg-blue-50 px-3 py-1 rounded-lg hover:bg-blue-100">+ Add Item</button>
+                    </div>
+                    <div id="bill-items-container" class="space-y-3">
+                        <div class="flex gap-3 bill-row items-center">
+                            <input type="text" placeholder="Item Name (Medicine/Other)" class="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium bill-name">
+                            <input type="number" placeholder="Qty" oninput="calculateBillTotal()" class="w-20 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-center bill-qty">
+                            <input type="number" placeholder="Price (₹)" oninput="calculateBillTotal()" class="w-28 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-center bill-price">
+                            <button onclick="this.parentElement.remove(); calculateBillTotal();" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t border-gray-100 pt-6 mt-6">
+                    <div>
+                        <p class="text-gray-500 font-medium">Grand Total</p>
+                        <h3 class="text-3xl font-black text-gray-800" id="bill-grand-total">₹0.00</h3>
+                    </div>
+                    <button onclick="generateDigitalBill()" class="bg-blue-600 text-white px-8 py-4 rounded-xl font-black shadow-lg hover:bg-blue-700 active:scale-95 transition-all outline-none">
+                        Generate & Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders -->
+        <div id="orders" class="tab-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-50 flex items-center justify-between bg-blue-50/50">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-3"><i class="fa-solid fa-cart-shopping text-blue-600"></i> Online Orders Management</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left bg-white">
+                        <thead>
+                            <tr class="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100 bg-gray-50">
+                                <th class="px-6 py-4 font-semibold text-gray-600">Patient/Source</th>
+                                <th class="px-6 py-4 font-semibold text-gray-600">Order Items</th>
+                                <th class="px-6 py-4 font-semibold text-gray-600">Status</th>
+                                <th class="px-6 py-4 font-semibold text-gray-600">Time</th>
+                                <th class="px-6 py-4 font-semibold text-gray-600 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50" id="pharmacy-orders-list">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory -->
+        <div id="inventory" class="tab-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto overflow-hidden">
+                <div class="p-6 border-b border-gray-50 flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-3"><i class="fa-solid fa-boxes-stacked text-blue-600"></i> Smart Inventory</h2>
+                </div>
+                <div class="p-6 bg-gray-50 border-b border-gray-100 space-y-4">
+                    <p class="font-bold text-gray-600 text-sm">Add New Stock</p>
+                    <div class="flex gap-4">
+                        <input type="text" id="inv-name" placeholder="Medicine Name..." class="flex-1 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500">
+                        <input type="number" id="inv-qty" placeholder="Units..." class="w-32 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-center">
+                        <input type="date" id="inv-expiry" class="w-40 p-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 text-sm">
+                        <button onclick="addInventoryItem()" class="bg-blue-600 text-white px-6 font-bold rounded-xl hover:bg-blue-700 shadow-sm">Add Stock</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto p-4">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-gray-400 text-xs uppercase tracking-widest border-b border-gray-100">
+                                <th class="px-4 py-3 font-semibold">Medicine</th>
+                                <th class="px-4 py-3 font-semibold text-center">Quantity</th>
+                                <th class="px-4 py-3 font-semibold">Expiry Date</th>
+                                <th class="px-4 py-3 font-semibold text-center">Status</th>
+                                <th class="px-4 py-3 font-semibold text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50" id="inventory-list">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Scanner -->
+        <div id="scanner" class="tab-content">
+            <div class="max-w-md mx-auto bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100 text-center">
+                <div class="bg-blue-600 p-6 text-white pb-10">
+                    <h2 class="text-2xl font-black flex justify-center items-center gap-2"><i class="fa-solid fa-camera"></i> AI Prescription Scanner</h2>
+                    <p class="text-sm text-blue-100 mt-2">Scan barcodes or handwritten prescriptions</p>
+                </div>
+                <div class="p-6 -mt-8">
+                    <div id="camera-frame" class="w-full aspect-square bg-black rounded-2xl border-4 border-white shadow-lg overflow-hidden relative">
+                        <!-- Camera target frame -->
+                        <div class="absolute inset-8 border-2 border-dashed border-blue-400 rounded-xl z-20 pointer-events-none opacity-50"></div>
+                        <div class="absolute inset-0 bg-blue-500/20 z-20 pointer-events-none animate-pulse"></div>
+                        <div id="reader" class="w-full h-full object-cover"></div>
+                    </div>
+                    <div id="scan-result" class="hidden mt-6 bg-blue-50 p-6 rounded-xl border border-blue-100 text-left">
+                        <p class="text-[10px] font-black uppercase text-blue-500 tracking-widest mb-1">Detected Data</p>
+                        <p id="qr-data-display" class="text-sm font-bold text-gray-800 break-words mb-4"></p>
+                        <button onclick="startScanner()" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold text-sm shadow">Scan Another</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile -->
+        <div id="profile" class="tab-content">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-2xl mx-auto font-inter">
+                <h2 class="text-3xl font-black text-slate-800 mb-6 flex items-center gap-3"><i class="fa-solid fa-user-doctor text-blue-600"></i> My Profile</h2>
+                
+                <div class="text-center mb-6">
+                    <div class="relative w-24 h-24 mx-auto mb-2">
+                        <img id="prof-dp" src="" class="w-24 h-24 bg-slate-100 rounded-3xl object-cover shadow-sm hidden">
+                        <div id="prof-dp-placeholder" class="w-24 h-24 bg-blue-100 text-blue-600 flex items-center justify-center rounded-3xl text-3xl font-black shadow-sm">P</div>
+                        <label class="absolute -right-2 -bottom-2 w-8 h-8 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 shadow cursor-pointer hover:text-blue-500 transition">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" id="dp-upload" class="hidden" onchange="uploadDP(event)" accept="image/*">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="space-y-4 mb-8">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Full Name</label>
+                        <input type="text" id="prof-name" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-400">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Email</label>
+                        <input type="email" id="prof-email" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-blue-400">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Phone No. (Locked)</label>
+                            <input type="text" id="prof-phone" readonly class="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-400 outline-none cursor-not-allowed">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Aadhaar (Locked)</label>
+                            <input type="text" id="prof-aadhar" readonly class="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-400 outline-none cursor-not-allowed">
+                        </div>
+                    </div>
+                    <button onclick="saveProfile()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-blue-600 transition-all">Save Changes</button>
+                </div>
+
+                <h3 class="font-black text-slate-800 text-lg mb-4">Pharmacy GPS Location</h3>
+                <div class="h-64 relative overflow-hidden rounded-2xl shadow-sm border border-slate-100">
+                    <iframe class="absolute inset-0 w-full h-full" id="gps-map" frameborder="0" style="border:0" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            if (confirm("Are you sure you want to logout? (Yes/No)")) {
+                window.location.href = "login.html.html";
+            }
+        }
+
+        function loadPharmacyOrders() {
+            let orders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            const tbody = document.getElementById('pharmacy-orders-list');
+            if(orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center font-bold text-gray-500">No new orders</td></tr>';
+            } else {
+                tbody.innerHTML = orders.map(o => {
+                    let source = o.patientName ? `Patient: ${o.patientName} <br><span class="text-[9px] text-gray-400 font-bold"><i class="fas fa-phone mr-1"></i>${o.phone}</span>` : `Hospital Inventory`;
+                    
+                    let actionBtn = `<button onclick="reviewOrder('${o.id}')" class="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-200 shadow-sm mr-2"><i class="fas fa-eye"></i></button>`;
+                    
+                    if(o.status === "Pending") {
+                        actionBtn += `<button onclick="acceptOrder('${o.id}')" class="px-3 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow hover:bg-emerald-600 mr-2"><i class="fas fa-check"></i></button>`;
+                        actionBtn += `<button onclick="declineOrder('${o.id}')" class="px-3 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold shadow hover:bg-rose-600"><i class="fas fa-times"></i></button>`;
+                    }
+
+                    return `
+                    <tr>
+                        <td class="px-6 py-4 font-medium text-gray-800">${source}<br><span class="text-xs font-bold text-blue-600 mt-1 block">${o.medName} (${o.qty} Units)</span></td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 ${o.status==='Approved'?'bg-emerald-100 text-emerald-600':o.status==='Declined'?'bg-rose-100 text-rose-600':'bg-yellow-100 text-yellow-600'} text-[10px] rounded-full font-bold uppercase tracking-widest">${o.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-500 text-sm font-semibold">${o.time}</td>
+                        <td class="px-6 py-4 flex items-center">
+                            ${actionBtn}
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        function reviewOrder(id) {
+            let orders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            let order = orders.find(o => o.id === id);
+            if(order) {
+                alert(`Order Details:\n\nOrder ID: ${order.id}\nSource: ${order.patientName || 'Hospital Request'}\nPhone: ${order.phone || 'N/A'}\nItems Requested: ${order.medName} (${order.qty} Units)\nSent At: ${order.time}\n\nStatus: ${order.status.toUpperCase()}`);
+            }
+        }
+
+        function acceptOrder(id) {
+            let orders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            let order = orders.find(o => o.id === id);
+            if(order) {
+                order.status = "Approved";
+                localStorage.setItem('pharmacy_orders', JSON.stringify(orders));
+                
+                // Sync with hospital stock if exists
+                let stock = JSON.parse(localStorage.getItem('safescript_hospital_stock')) || [];
+                let sIdx = stock.findIndex(s => s.id === id);
+                if(sIdx > -1) {
+                    stock[sIdx].status = "STABLE";
+                    localStorage.setItem('safescript_hospital_stock', JSON.stringify(stock));
+                }
+
+                // Sync with patient orders if exists
+                let patientOrders = JSON.parse(localStorage.getItem('safescript_patient_orders')) || [];
+                let pIdx = patientOrders.findIndex(p => p.id === id);
+                if(pIdx > -1) {
+                    patientOrders[pIdx].status = "Approved";
+                    localStorage.setItem('safescript_patient_orders', JSON.stringify(patientOrders));
+                }
+
+                loadPharmacyOrders();
+                alert(`Order for ${order.medName} Approved!`);
+            }
+        }
+
+        function declineOrder(id) {
+            let orders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            let order = orders.find(o => o.id === id);
+            if(order) {
+                if(confirm(`Are you sure you want to decline ${order.medName}?`)) {
+                    order.status = "Declined";
+                    localStorage.setItem('pharmacy_orders', JSON.stringify(orders));
+                    
+                    // Sync with hospital stock
+                    let stock = JSON.parse(localStorage.getItem('safescript_hospital_stock')) || [];
+                    let sIdx = stock.findIndex(s => s.id === id);
+                    if(sIdx > -1) {
+                        stock[sIdx].status = "DECLINED";
+                        localStorage.setItem('safescript_hospital_stock', JSON.stringify(stock));
+                    }
+
+                    // Sync with patient orders
+                    let patientOrders = JSON.parse(localStorage.getItem('safescript_patient_orders')) || [];
+                    let pIdx = patientOrders.findIndex(p => p.id === id);
+                    if(pIdx > -1) {
+                        patientOrders[pIdx].status = "Declined";
+                        localStorage.setItem('safescript_patient_orders', JSON.stringify(patientOrders));
+                    }
+
+                    loadPharmacyOrders();
+                }
+            }
+        }
+
+        let currentUser = null;
+        let html5QrCode;
+
+        function loadPharmacyProfile() {
+            const userData = localStorage.getItem('safescript_user');
+            if(userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('user-display-name').innerText = currentUser.fullName.split(' ')[0];
+                document.getElementById('user-display-role').innerText = currentUser.role || 'Pharmacy';
+                
+                if(document.getElementById('prof-name')) document.getElementById('prof-name').value = currentUser.fullName;
+                if(document.getElementById('prof-email')) document.getElementById('prof-email').value = currentUser.email;
+                if(document.getElementById('prof-phone')) document.getElementById('prof-phone').value = currentUser.phone;
+                if(document.getElementById('prof-aadhar')) document.getElementById('prof-aadhar').value = currentUser.aadhar;
+
+                if(currentUser.dp) {
+                    document.getElementById('prof-dp').src = currentUser.dp;
+                    document.getElementById('user-display-dp').src = currentUser.dp;
+                    document.getElementById('prof-dp').classList.remove('hidden');
+                    document.getElementById('user-display-dp').classList.remove('hidden');
+                    document.getElementById('prof-dp-placeholder').classList.add('hidden');
+                    document.getElementById('user-display-icon').classList.add('hidden');
+                }
+
+                let gpsUrl = "https://maps.google.com/maps?width=100%25&height=600&hl=en&q=Hauz%20Khas,%20New%20Delhi&t=&z=14&ie=UTF8&iwloc=B&output=embed";
+                if(document.getElementById('gps-map')) document.getElementById('gps-map').src = gpsUrl;
+            }
+        }
+
+        function uploadDP(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgData = e.target.result;
+                    document.getElementById('prof-dp').src = imgData;
+                    document.getElementById('user-display-dp').src = imgData;
+                    document.getElementById('prof-dp').classList.remove('hidden');
+                    document.getElementById('user-display-dp').classList.remove('hidden');
+                    document.getElementById('prof-dp-placeholder').classList.add('hidden');
+                    document.getElementById('user-display-icon').classList.add('hidden');
+
+                    if(currentUser) {
+                        currentUser.dp = imgData;
+                        localStorage.setItem('safescript_user', JSON.stringify(currentUser));
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProfile() {
+            if(currentUser) {
+                currentUser.fullName = document.getElementById('prof-name').value;
+                currentUser.email = document.getElementById('prof-email').value;
+                localStorage.setItem('safescript_user', JSON.stringify(currentUser));
+                loadPharmacyProfile();
+                alert('Profile Updated Successfully!');
+            }
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-tab'));
+            document.getElementById(tabId).classList.add('active-tab');
+            
+            document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            if(tabId !== 'scanner' && html5QrCode) {
+                html5QrCode.stop().catch(e => console.log(e));
+            }
+        }
+
+        function calculateBillTotal() {
+            let total = 0;
+            document.querySelectorAll('.bill-row').forEach(row => {
+                let qty = parseFloat(row.querySelector('.bill-qty').value) || 0;
+                let price = parseFloat(row.querySelector('.bill-price').value) || 0;
+                total += qty * price;
+            });
+            document.getElementById('bill-grand-total').innerText = "₹" + total.toFixed(2);
+            return total;
+        }
+
+        function addBillRow() {
+            let container = document.getElementById('bill-items-container');
+            let div = document.createElement('div');
+            div.className = "flex gap-3 bill-row items-center";
+            div.innerHTML = `
+                <input type="text" placeholder="Item Name (Medicine/Other)" class="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium bill-name">
+                <input type="number" placeholder="Qty" oninput="calculateBillTotal()" class="w-20 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-center bill-qty">
+                <input type="number" placeholder="Price (₹)" oninput="calculateBillTotal()" class="w-28 p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-center bill-price">
+                <button onclick="this.parentElement.remove(); calculateBillTotal();" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function generateDigitalBill() {
+            const pharmacy = document.getElementById('bill-pharmacy').value || "GenMed Pharmacy";
+            const customer = document.getElementById('bill-customer').value || "General Customer";
+            let total = calculateBillTotal();
+            
+            let medItems = [];
+            document.querySelectorAll('.bill-row').forEach(row => {
+                let name = row.querySelector('.bill-name').value;
+                let qty = row.querySelector('.bill-qty').value;
+                let price = row.querySelector('.bill-price').value;
+                if(name && qty && price) {
+                    medItems.push([name, qty, "Rs. " + price, "Rs. " + (qty * price).toFixed(2)]);
+                }
+            });
+
+            if(medItems.length === 0) return alert("Please add at least one billed item.");
+
+            // Save to logs/sales
+            let logs = JSON.parse(localStorage.getItem('pharmacy_billing_logs')) || [];
+            let billId = "BILL-" + Math.floor(1000 + Math.random() * 9000);
+            logs.unshift({ id: billId, customer, amount: total, time: new Date().toLocaleString() });
+            localStorage.setItem('pharmacy_billing_logs', JSON.stringify(logs));
+
+            // Generate Stylish PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFillColor(37, 99, 235); // Blue 600
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("DIGITAL TAX INVOICE", 15, 20);
+            doc.setFontSize(10);
+            doc.text(pharmacy, 15, 30);
+
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.text("INVOICE NO: " + billId, 15, 55);
+            doc.text("BILL TO: " + customer, 15, 62);
+            doc.text("DATE: " + new Date().toLocaleDateString(), 15, 69);
+
+            doc.autoTable({
+                startY: 80,
+                head: [['Description', 'Quantity', 'Rate', 'Amount']],
+                body: medItems,
+                foot: [['', '', 'Grand Total', 'Rs. ' + total.toFixed(2)]],
+                headStyles: { fillColor: [59, 130, 246] }, // Blue 500
+                footStyles: { fillColor: [243, 244, 246], textColor: [40,40,40], fontStyle: 'bold'},
+                theme: 'grid'
+            });
+
+            const finalY = doc.previousAutoTable.finalY + 20;
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text("System generated by SafeScript AI Billing Portal.", 15, finalY);
+            
+            doc.save(`${billId}_Invoice.pdf`);
+            
+            // Clear items
+            document.querySelectorAll('.bill-row').forEach((r, idx) => {
+                if(idx > 0) r.remove();
+                else {
+                    r.querySelector('.bill-name').value = '';
+                    r.querySelector('.bill-qty').value = '';
+                    r.querySelector('.bill-price').value = '';
+                }
+            });
+            document.getElementById('bill-customer').value = '';
+            calculateBillTotal();
+            loadDashboardData();
+            alert("Bill Generated Successfully!");
+        }
+
+        function startScanner() {
+            document.getElementById('scan-result').classList.add('hidden');
+            document.getElementById('camera-frame').classList.remove('hidden');
+            
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 20, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                document.getElementById('camera-frame').classList.add('hidden');
+                document.getElementById('scan-result').classList.remove('hidden');
+                document.getElementById('qr-data-display').innerHTML = `
+                    Detected Barcode: <b>${decodedText}</b><br>
+                    Cross-referenced with inventory: Match found!
+                `;
+                html5QrCode.stop();
+            }).catch(err => console.log("Camera failed", err));
+        }
+
+        function loadSmartInventory() {
+            let inv = JSON.parse(localStorage.getItem('safescript_pharmacy_inventory')) || [];
+            let tbody = document.getElementById('inventory-list');
+            if(!tbody) return;
+
+            let lowStockCount = 0;
+            let nearExpiryCount = 0;
+
+            tbody.innerHTML = inv.map(i => {
+                let isLow = i.qty < 20;
+                let isExpiring = (new Date(i.expiry) - new Date()) / (1000 * 60 * 60 * 24) < 30;
+                
+                if(isLow) lowStockCount++;
+                if(isExpiring) nearExpiryCount++;
+
+                let statusBadge = '';
+                if(isLow) statusBadge += '<span class="bg-red-100 text-red-600 px-2 py-1 rounded text-[10px] font-bold block mb-1">Low Stock</span>';
+                if(isExpiring) statusBadge += '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded text-[10px] font-bold block">Expiring</span>';
+                if(!isLow && !isExpiring) statusBadge = '<span class="bg-emerald-100 text-emerald-600 px-2 py-1 rounded text-[10px] font-bold block">Healthy</span>';
+
+                return `
+                <tr>
+                    <td class="px-4 py-3 font-semibold text-gray-800">${i.name}</td>
+                    <td class="px-4 py-3 text-center font-bold text-gray-600">${i.qty}</td>
+                    <td class="px-4 py-3 font-semibold text-gray-500">${i.expiry}</td>
+                    <td class="px-4 py-3">${statusBadge}</td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick="removeInventory(${i.id})" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+
+            document.getElementById('dash-lowstock-val').innerText = lowStockCount;
+            document.getElementById('dash-expiring-val').innerText = nearExpiryCount;
+        }
+
+        function addInventoryItem() {
+            let name = document.getElementById('inv-name').value;
+            let qty = document.getElementById('inv-qty').value;
+            let expiry = document.getElementById('inv-expiry').value;
+            if(!name || !qty || !expiry) return alert("Fill all inventory details");
+
+            let inv = JSON.parse(localStorage.getItem('safescript_pharmacy_inventory')) || [];
+            inv.push({ id: Date.now(), name, qty: parseInt(qty), expiry });
+            localStorage.setItem('safescript_pharmacy_inventory', JSON.stringify(inv));
+            
+            document.getElementById('inv-name').value = '';
+            document.getElementById('inv-qty').value = '';
+            document.getElementById('inv-expiry').value = '';
+            loadSmartInventory();
+            alert("Stock Added");
+        }
+
+        function removeInventory(id) {
+            let inv = JSON.parse(localStorage.getItem('safescript_pharmacy_inventory')) || [];
+            inv = inv.filter(i => i.id !== id);
+            localStorage.setItem('safescript_pharmacy_inventory', JSON.stringify(inv));
+            loadSmartInventory();
+        }
+
+        function loadDashboardData() {
+            let logs = JSON.parse(localStorage.getItem('pharmacy_billing_logs')) || [];
+            let rOrders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            let totalSales = logs.reduce((sum, l) => sum + l.amount, 0);
+            
+            // Adding up approved order totals (assuming 150 rs default value per approved online order as mock)
+            totalSales += rOrders.filter(o => o.status === 'Approved').length * 150;
+
+            document.getElementById('dash-sales-val').innerText = "₹" + totalSales.toLocaleString();
+            let pendingCount = rOrders.filter(o => o.status === 'Pending').length;
+            document.getElementById('dash-orders-val').innerText = pendingCount;
+
+            document.getElementById('dash-logs-list').innerHTML = logs.slice(0, 5).map(l => `
+                <tr>
+                    <td class="px-6 py-4 font-bold text-gray-800">Bill Created</td>
+                    <td class="px-6 py-4 font-black text-green-600">+₹${l.amount.toFixed(2)}</td>
+                    <td class="px-6 py-4 font-semibold text-gray-500">${l.time}</td>
+                </tr>
+            `).join('');
+        }
+
+        window.addEventListener('load', () => {
+            loadPharmacyProfile();
+            loadPharmacyOrders();
+            loadSmartInventory();
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeScript AI | Your Health Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --hc-blue: #eef2ff;
+            --hc-teal: #0d9488;
+            --hc-accent: #38bdf8;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            /* Healthcare Gradient Background */
+            background: 
+                radial-gradient(at 0% 0%, rgba(204, 251, 241, 0.5) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(224, 242, 254, 0.5) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(238, 242, 255, 0.5) 0px, transparent 50%),
+                #ffffff;
+            color: #334155; 
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism with Healthcare touch */
+        .medical-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .tab-content { display: none; }
+        .active-tab { 
+            display: block; 
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animated Scanner Area */
+        .scan-window {
+            position: relative;
+            border: 8px solid white;
+            box-shadow: 0 0 0 1px #e2e8f0;
+            overflow: hidden;
+            border-radius: 3rem;
+        }
+
+        .laser-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, transparent, var(--hc-teal), transparent);
+            box-shadow: 0 0 15px var(--hc-teal);
+            top: 0;
+            z-index: 20;
+            animation: laserMove 2.5s ease-in-out infinite;
+        }
+
+        @keyframes laserMove {
+            0%, 100% { top: 5%; }
+            50% { top: 95%; }
+        }
+
+        /* Floating Nav Styling */
+        .nav-link {
+            transition: all 0.4s ease;
+            color: #94a3b8;
+        }
+        .nav-link.active {
+            color: var(--hc-teal);
+            transform: translateY(-5px);
+        }
+
+        /* Pulse for Health buttons */
+        .pulse-teal {
+            box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4);
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(13, 148, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0); }
+        }
+    </style>
+</head>
+<body class="pb-36">
+
+    <header class="p-6 flex justify-between items-center sticky top-0 z-50 bg-white/60 backdrop-blur-md">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('profile')">
+            <div class="w-12 h-12 bg-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100 rotate-6 overflow-hidden">
+                <img id="user-display-dp" src="" class="hidden w-full h-full object-cover">
+                <i id="user-display-icon" class="fas fa-notes-medical text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-xl text-slate-800 tracking-tight">Welcome, <span id="user-display-name" class="text-teal-600">User</span></h1>
+                <div class="flex items-center gap-1">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span id="user-display-role" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Patient Portal</span>
+                </div>
+            </div>
+        </div>
+        <button onclick="triggerSOS()" class="bg-red-50 text-red-500 border border-red-100 px-5 py-2 rounded-2xl text-xs font-black hover:bg-red-500 hover:text-white transition-all shadow-sm">
+            SOS EMERGENCY
+        </button>
+    </header>
+
+    <main class="p-6 max-w-lg mx-auto space-y-8">
+
+        <div id="home" class="tab-content active-tab space-y-6">
+            <div class="bg-gradient-to-br from-teal-600 to-teal-800 rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                <i class="fas fa-dna absolute -right-4 -bottom-4 text-9xl text-white/10 rotate-12"></i>
+                <div class="relative z-10">
+                    <p class="text-teal-100 font-medium">नमस्ते, आपकी सेहत आज अच्छी है!</p>
+                    <div class="flex justify-between items-center mb-4 mt-8">
+                        <h2 class="text-3xl font-black">Health Summary</h2>
+                        <button onclick="measureHealth()" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full font-bold shadow-sm transition"><i class="fas fa-fingerprint mr-1 text-teal-200"></i> Measure Live</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-2">
+                        <div class="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20">
+                            <div class="flex justify-between items-start mb-2">
+                                <i class="fas fa-tint text-teal-300"></i>
+                                <span class="text-[8px] font-bold bg-teal-400/30 px-2 py-1 rounded-md">Normal</span>
+                            </div>
+                            <p class="text-2xl font-black"><span id="glucose-val">98</span> <span class="text-xs font-light">mg/dL</span></p>
+                            <p class="text-[10px] text-teal-100 uppercase font-bold">Glucose</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20">
+                            <div class="flex justify-between items-start mb-2">
+                                <i class="fas fa-heart text-red-300"></i>
+                                <span class="text-[8px] font-bold bg-teal-400/30 px-2 py-1 rounded-md">Optimal</span>
+                            </div>
+                            <p class="text-2xl font-black"><span id="hr-val">72</span> <span class="text-xs font-light">bpm</span></p>
+                            <p class="text-[10px] text-teal-100 uppercase font-bold">Heart Rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="medical-card p-8">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="font-black text-slate-800 text-lg flex items-center gap-3">
+                        <i class="fas fa-bell text-orange-400"></i> My Reminders
+                    </h3>
+                    <button onclick="document.getElementById('add-reminder-form').classList.toggle('hidden')" class="bg-orange-100 text-orange-600 px-3 py-1 rounded-lg text-xs font-bold">+ New</button>
+                </div>
+                
+                <div id="add-reminder-form" class="hidden mb-6 p-4 bg-orange-50 rounded-2xl border border-orange-100 shadow-md">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">What to remember?</label>
+                        <input type="text" id="rem-title" placeholder="e.g., Take Dolo 650, Drink water..." class="w-full p-4 bg-white border border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-orange-400">
+                    </div>
+                    <div class="flex gap-4 mt-3">
+                        <div class="flex-1 space-y-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Date</label>
+                            <input type="date" id="rem-date" class="w-full p-4 bg-white border border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-orange-400">
+                        </div>
+                        <div class="flex-1 space-y-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Time</label>
+                            <input type="time" id="rem-time" class="w-full p-4 bg-white border border-slate-100 rounded-xl text-sm font-bold outline-none focus:border-orange-400">
+                        </div>
+                    </div>
+                    <button onclick="addReminder()" class="w-full mt-4 bg-orange-500 text-white py-3 rounded-xl font-black shadow-lg shadow-orange-200 hover:bg-orange-600">Save Reminder</button>
+                </div>
+
+                <div id="reminders-list" class="space-y-4">
+                    <!-- Loaded by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div id="reports" class="tab-content space-y-6">
+            <div class="text-center space-y-2">
+                <span class="bg-teal-100 text-teal-700 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">Smart AI Vision</span>
+                <h2 class="text-3xl font-black text-slate-800">Scanner</h2>
+            </div>
+
+            <div id="camera-container" class="scan-window group">
+                <div class="laser-line"></div>
+                <div id="reader" class="w-full bg-slate-100 aspect-square"></div>
+            </div>
+
+            <div id="scan-feedback" class="hidden medical-card p-10 text-center border-2 border-teal-200">
+                <div class="w-20 h-20 bg-teal-500 text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-teal-200">
+                    <i class="fas fa-check text-3xl"></i>
+                </div>
+                <p class="text-xl font-black text-slate-800">लिंक मिल गया!</p>
+                <p class="text-sm text-slate-500">हम आपको सुरक्षित रूप से रीडायरेक्ट कर रहे हैं...</p>
+            </div>
+
+            <div id="ai-output-container" class="hidden space-y-4">
+                <div class="medical-card p-8 border-t-4 border-teal-500">
+                    <p class="text-[10px] font-black text-teal-600 uppercase mb-3 tracking-widest">Analyzed Result</p>
+                    <p id="qr-data-display" class="text-slate-700 font-semibold leading-relaxed"></p>
+                </div>
+                <button onclick="resetScanner()" class="w-full text-slate-400 font-bold text-xs uppercase tracking-widest py-4">
+                    <i class="fas fa-redo mr-2"></i> Tap to scan another
+                </button>
+            </div>
+        </div>
+
+        <div id="order" class="tab-content space-y-6">
+            <h2 class="text-3xl font-black text-slate-800">Pharmacy Order</h2>
+            <div class="medical-card p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Pharmacy Name</label>
+                    <input type="text" id="pharmacyName" placeholder="Apollo Pharmacy..." class="w-full p-5 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500 focus:bg-white transition-all">
+                </div>
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Medicines</label>
+                    <div id="med-list-container" class="space-y-3">
+                        <div class="flex gap-3 med-row">
+                            <input type="text" placeholder="Medicine Name" class="flex-1 p-5 bg-slate-50 border border-slate-100 rounded-3xl text-sm med-name">
+                            <input type="number" placeholder="Qty" class="w-20 p-5 bg-slate-50 border border-slate-100 rounded-3xl text-sm text-center med-qty">
+                            <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 px-3"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button onclick="addPatientMedRow()" class="text-xs font-bold text-teal-600 hover:underline">+ Add Another Medicine</button>
+                </div>
+                <button onclick="generateMedBill()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black shadow-2xl shadow-slate-300 active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <i class="fas fa-file-pdf"></i> Place Order & Save Bill
+                </button>
+            </div>
+        </div>
+
+        <div id="bookappt" class="tab-content space-y-6">
+            <h2 class="text-3xl font-black text-slate-800">Book Appointment</h2>
+            <div class="medical-card p-8 space-y-6">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Type (Clinic or Hospital OPD)</label>
+                    <select id="apptType" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500 focus:bg-white transition-all">
+                        <option value="Clinic">Online Clinic Booking</option>
+                        <option value="Hospital OPD">Hospital OPD Booking</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Patient Details</label>
+                    <input type="text" id="apptName" placeholder="Full Name..." class="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500 mb-3">
+                    <input type="text" id="apptPhone" placeholder="Mobile Number..." class="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Reason</label>
+                    <input type="text" id="apptReason" placeholder="Fever, Routine Checkup..." class="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 ml-2">Date</label>
+                    <input type="date" id="apptDate" class="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl outline-none focus:border-teal-500">
+                </div>
+                <button onclick="bookAppointment()" class="w-full bg-teal-600 text-white py-4 rounded-3xl font-black shadow-2xl shadow-teal-300 active:scale-95 transition-all flex items-center justify-center gap-3">
+                    <i class="fas fa-calendar-check"></i> Confirm Booking & Download PDF
+                </button>
+            </div>
+        </div>
+
+        <div id="profile" class="tab-content space-y-6 hidden">
+            <h2 class="text-3xl font-black text-slate-800">My Profile</h2>
+            
+            <div class="medical-card p-6 space-y-4">
+                <div class="text-center mb-6">
+                    <div class="relative w-24 h-24 mx-auto mb-2">
+                        <img id="prof-dp" src="" class="w-24 h-24 bg-slate-100 rounded-3xl object-cover shadow-sm hidden">
+                        <div id="prof-dp-placeholder" class="w-24 h-24 bg-teal-100 text-teal-600 flex items-center justify-center rounded-3xl text-3xl font-black shadow-sm">U</div>
+                        <label class="absolute -right-2 -bottom-2 w-8 h-8 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-400 shadow cursor-pointer hover:text-teal-500 transition">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" id="dp-upload" class="hidden" onchange="uploadDP(event)" accept="image/*">
+                        </label>
+                        <button onclick="deleteDP()" class="absolute -left-2 -bottom-2 w-8 h-8 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-500 shadow cursor-pointer hover:bg-rose-500 hover:text-white transition">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Full Name</label>
+                    <input type="text" id="prof-name" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold outline-none focus:border-teal-400">
+                </div>
+                <div class="space-y-3">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Email</label>
+                    <input type="email" id="prof-email" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold outline-none focus:border-teal-400">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Phone No. (Locked)</label>
+                        <input type="text" id="prof-phone" readonly class="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-400 outline-none cursor-not-allowed">
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Aadhaar (Locked)</label>
+                        <input type="text" id="prof-aadhar" readonly class="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-400 outline-none cursor-not-allowed">
+                    </div>
+                </div>
+                <button onclick="saveProfile()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-teal-500 transition-all">Save Changes</button>
+            </div>
+
+            <h3 class="font-black text-slate-800 text-lg">My Status Board</h3>
+            <div id="status-bars" class="space-y-3">
+                <!-- Javascript will load order & appt statuses here -->
+            </div>
+
+            <h3 class="font-black text-slate-800 text-lg mt-6">AI File & Document Store</h3>
+            <div class="medical-card p-6 border-2 border-teal-100 bg-teal-50/20">
+                <input type="file" id="ai-store-file" class="w-full p-3 bg-white text-xs font-bold border border-slate-200 rounded-xl mb-3">
+                <button onclick="analyzeAndStoreFile()" class="w-full bg-teal-600 text-white p-3 rounded-xl shadow font-bold text-sm hover:bg-teal-700 transition">Upload & Permanently Save</button>
+                <div id="ai-file-result" class="mt-4 hidden p-4 bg-white border border-teal-100 rounded-xl text-xs font-semibold text-slate-600 leading-relaxed shadow-sm"></div>
+                
+                <h4 class="font-bold text-slate-700 text-sm mt-6 mb-3 border-t border-slate-200 pt-4">My Saved Documents</h4>
+                <div id="ai-store-list" class="space-y-3">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            <h3 class="font-black text-slate-800 text-lg mt-6">GPS Location</h3>
+            <div class="medical-card p-4 h-64 relative overflow-hidden">
+                <iframe class="absolute inset-0 w-full h-full" id="gps-map" frameborder="0" style="border:0" allowfullscreen></iframe>
+            </div>
+            
+            <div class="mb-32"></div>
+        </div>
+
+    </main>
+
+    <nav class="fixed bottom-8 left-6 right-6 h-24 medical-card flex justify-around items-center px-6 border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-50">
+        <button onclick="switchTab('home')" class="nav-link active flex flex-col items-center group">
+            <i class="fas fa-house-user text-xl"></i>
+            <span class="text-[9px] font-bold mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity">Home</span>
+        </button>
+        <button onclick="switchTab('reports'); startScanning();" class="nav-link flex flex-col items-center group">
+            <i class="fas fa-qrcode text-xl"></i>
+            <span class="text-[9px] font-bold mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity">Scan</span>
+        </button>
+        
+        <div class="relative -top-12">
+            <button onclick="toggleVoice()" class="w-20 h-20 bg-teal-500 text-white rounded-full border-[8px] border-white shadow-xl shadow-teal-100 pulse-teal flex items-center justify-center active:scale-90 transition-transform">
+                <i class="fas fa-microphone text-2xl"></i>
+            </button>
+        </div>
+
+        <button onclick="switchTab('bookappt')" class="nav-link flex flex-col items-center group">
+            <i class="fas fa-calendar-alt text-xl"></i>
+            <span class="text-[9px] font-bold mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity">Book</span>
+        </button>
+        <button onclick="switchTab('order')" class="nav-link flex flex-col items-center group">
+            <i class="fas fa-cart-plus text-xl"></i>
+            <span class="text-[9px] font-bold mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity">Order</span>
+        </button>
+        <button onclick="logout()" class="nav-link flex flex-col items-center group">
+            <i class="fas fa-sign-out-alt text-xl"></i>
+            <span class="text-[9px] font-bold mt-1 opacity-0 group-[.active]:opacity-100 transition-opacity">Logout</span>
+        </button>
+    </nav>
+
+    <script>
+        let html5QrCode;
+        let currentUser = null;
+
+        function loadUserProfile() {
+            const userData = localStorage.getItem('safescript_user');
+            if(userData) {
+                currentUser = JSON.parse(userData);
+                document.getElementById('user-display-name').innerText = currentUser.fullName.split(' ')[0];
+                document.getElementById('user-display-role').innerText = currentUser.role;
+                
+                // Pre-fill appointment form if elements exist
+                if(document.getElementById('apptName')) document.getElementById('apptName').value = currentUser.fullName;
+                if(document.getElementById('apptPhone')) document.getElementById('apptPhone').value = currentUser.phone;
+
+                // Load Profile Tab Inputs
+                if(document.getElementById('prof-name')) document.getElementById('prof-name').value = currentUser.fullName;
+                if(document.getElementById('prof-email')) document.getElementById('prof-email').value = currentUser.email;
+                if(document.getElementById('prof-phone')) document.getElementById('prof-phone').value = currentUser.phone;
+                if(document.getElementById('prof-aadhar')) document.getElementById('prof-aadhar').value = currentUser.aadhar;
+
+                if(currentUser.dp) {
+                    document.getElementById('prof-dp').src = currentUser.dp;
+                    document.getElementById('user-display-dp').src = currentUser.dp;
+                    document.getElementById('prof-dp').classList.remove('hidden');
+                    document.getElementById('user-display-dp').classList.remove('hidden');
+                    document.getElementById('prof-dp-placeholder').classList.add('hidden');
+                    document.getElementById('user-display-icon').classList.add('hidden');
+                }
+
+                // GPS Embed
+                let gpsUrl = "https://maps.google.com/maps?width=100%25&height=600&hl=en&q=Hauz%20Khas,%20New%20Delhi&t=&z=14&ie=UTF8&iwloc=B&output=embed";
+                document.getElementById('gps-map').src = gpsUrl;
+
+                loadPatientStatusBoard();
+            }
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
+            document.getElementById(id).classList.add('active-tab');
+            
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+            if (event) event.currentTarget.classList.add('active');
+            
+            if(id !== 'reports' && html5QrCode) {
+                html5QrCode.stop().catch(e => console.log(e));
+            }
+        }
+
+        function startScanning() {
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 20, qrbox: { width: 280, height: 280 } };
+
+            html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+                handleScanAction(decodedText);
+            }).catch(err => console.log("Camera failed", err));
+        }
+
+        function handleScanAction(data) {
+            speak("Scan successful.");
+            const urlPattern = /^(https?:\/\/|www\.)[^\s$.?#].[^\s]*$/i;
+            
+            if (urlPattern.test(data)) {
+                document.getElementById('camera-container').classList.add('hidden');
+                document.getElementById('scan-feedback').classList.remove('hidden');
+                setTimeout(() => {
+                    window.open(data.startsWith('http') ? data : 'https://' + data, '_blank');
+                    resetScanner();
+                }, 1500);
+            } else {
+                html5QrCode.stop();
+                document.getElementById('camera-container').classList.add('hidden');
+                document.getElementById('ai-output-container').classList.remove('hidden');
+                document.getElementById('qr-data-display').innerText = data;
+                speak("Humne report analyze kar li hai.");
+            }
+        }
+
+        function resetScanner() {
+            document.getElementById('camera-container').classList.remove('hidden');
+            document.getElementById('scan-feedback').classList.add('hidden');
+            document.getElementById('ai-output-container').classList.add('hidden');
+            if(html5QrCode) startScanning();
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.lang = 'hi-IN';
+            window.speechSynthesis.speak(utter);
+        }
+
+        function addPatientMedRow() {
+            let container = document.getElementById('med-list-container');
+            let div = document.createElement('div');
+            div.className = "flex gap-3 med-row";
+            div.innerHTML = `
+                <input type="text" placeholder="Medicine Name" class="flex-1 p-5 bg-slate-50 border border-slate-100 rounded-3xl text-sm med-name">
+                <input type="number" placeholder="Qty" class="w-20 p-5 bg-slate-50 border border-slate-100 rounded-3xl text-sm text-center med-qty">
+                <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-600 px-3"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function generateMedBill() {
+            const pharmacy = document.getElementById('pharmacyName').value || "GenMed";
+            
+            let medItems = [];
+            document.querySelectorAll('.med-row').forEach(row => {
+                let name = row.querySelector('.med-name').value;
+                let qty = row.querySelector('.med-qty').value;
+                if(name && qty) medItems.push({name, qty});
+            });
+
+            if(medItems.length === 0) {
+                alert("Please add at least one medicine with quantity.");
+                return;
+            }
+
+            // Sync with pharmacy orders and patient's status bar
+            let orderId = "ORD-" + Math.floor(1000 + Math.random() * 9000);
+            let combinedNames = medItems.map(m => m.name).join(', ');
+            let combinedQtys = medItems.map(m => m.qty).reduce((a, b) => parseInt(a) + parseInt(b), 0);
+            
+            let orderObj = {
+                id: orderId,
+                patientName: "You (Patient Portal)",
+                phone: "Registered Number",
+                medName: combinedNames,
+                qty: combinedQtys,
+                status: "Pending",
+                time: new Date().toLocaleTimeString()
+            };
+
+            let pharmacyOrders = JSON.parse(localStorage.getItem('pharmacy_orders')) || [];
+            pharmacyOrders.unshift(orderObj);
+            localStorage.setItem('pharmacy_orders', JSON.stringify(pharmacyOrders));
+
+            let patientOrders = JSON.parse(localStorage.getItem('safescript_patient_orders')) || [];
+            patientOrders.unshift(orderObj);
+            localStorage.setItem('safescript_patient_orders', JSON.stringify(patientOrders));
+
+            // Generate Attractive PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFillColor(15, 23, 42); // Slate 900
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("SafeScript AI - MEDICAL ORDER", 15, 20);
+            doc.setFontSize(10);
+            doc.text("Pharmacy: " + pharmacy, 15, 30);
+
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.text("ORDER NUMBER: " + orderId, 15, 55);
+            doc.text("DATE: " + new Date().toLocaleDateString(), 15, 62);
+            doc.text("STATUS: PENDING", 15, 69);
+
+            let tableBody = medItems.map(m => [m.name, m.qty + " Units"]);
+            
+            doc.autoTable({
+                startY: 85,
+                head: [['Medicine Name', 'Quantity']],
+                body: tableBody,
+                headStyles: { fillColor: [13, 148, 136] }, // Teal 600
+                theme: 'striped'
+            });
+
+            const finalY = doc.previousAutoTable.finalY + 20;
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text("System generated tracking receipt. Status checks available in app.", 15, finalY);
+            
+            doc.save(orderId + "_Prescription_Bill.pdf");
+            
+            speak("Order process ho gaya hai. Aapki dawai jaldi aa jayegi.");
+            alert("Order Sent to Pharmacy! You can track it in your status bar.");
+            
+            // Clear inputs
+            document.querySelectorAll('.med-row').forEach((row, idx) => {
+                if(idx > 0) row.remove();
+                else {
+                    row.querySelector('.med-name').value = '';
+                    row.querySelector('.med-qty').value = '';
+                }
+            });
+            document.getElementById('pharmacyName').value = '';
+        }
+
+        function toggleVoice() {
+            speak("Main aapka swasthya sahayak hoon. Main scan karne ke liye taiyaar hoon.");
+        }
+
+        function measureHealth() {
+            if (navigator.vibrate) {
+                // Vibrate pattern: beat, pause, beat, pause
+                navigator.vibrate([200, 100, 200, 500, 200, 100, 200]);
+            }
+            speak("Aapki heart rate aur glucose check ho rahi hai. Kripya rukein.");
+            document.getElementById('hr-val').innerText = "...";
+            document.getElementById('glucose-val').innerText = "...";
+            
+            setTimeout(() => {
+                let hr = Math.floor(Math.random() * (90 - 60 + 1)) + 60;
+                let glucose = Math.floor(Math.random() * (120 - 80 + 1)) + 80;
+                document.getElementById('hr-val').innerText = hr;
+                document.getElementById('glucose-val').innerText = glucose;
+                speak(`Aapka heart rate hai ${hr} beats per minute, aur glucose level hai ${glucose}. Aap theek hain.`);
+            }, 3000);
+        }
+
+        function triggerSOS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+                    speak("Emergency alert sent to your doctor and hospital with your GPS location. Ambulance is being booked.");
+                    alert(`🚨 EMERGENCY BOOKED!\nAmbulance heading to: Lat ${lat.toFixed(4)}, Lon ${lon.toFixed(4)}`);
+                }, err => {
+                    speak("Emergency alert sent to your doctor, but GPS could not be found.");
+                    alert("🚨 EMERGENCY: Help is on the way!");
+                });
+            } else {
+                speak("Emergency alert sent to your doctor and hospital.");
+                alert("🚨 EMERGENCY: Help is on the way!");
+            }
+        }
+
+        function bookAppointment() {
+            const type = document.getElementById('apptType').value;
+            const name = document.getElementById('apptName').value;
+            const phone = document.getElementById('apptPhone').value;
+            const reason = document.getElementById('apptReason').value;
+            const date = document.getElementById('apptDate').value;
+            
+            if(!name || !phone || !reason || !date) {
+                alert("Please fill all details to book your appointment.");
+                return;
+            }
+
+            const apptId = "APT-" + Math.floor(1000 + Math.random() * 9000);
+            const newAppt = {
+                id: apptId, type, name, phone, reason, date, status: 'Pending'
+            };
+
+            let appts = JSON.parse(localStorage.getItem('safescript_appointments')) || [];
+            appts.push(newAppt);
+            localStorage.setItem('safescript_appointments', JSON.stringify(appts));
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Nice Header
+            doc.setFillColor(13, 148, 136); // Teal 600
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("SafeScript AI - APPOINTMENT", 15, 20);
+            doc.setFontSize(10);
+            doc.text("Official Medical Booking Receipt", 15, 30);
+
+            // Patient details area
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.text("PATIENT DETAILS:", 15, 55);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("Name: " + name, 15, 65);
+            doc.text("Phone: " + phone, 15, 72);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("APPOINTMENT INFO:", 110, 55);
+            doc.setFont("helvetica", "normal");
+            doc.text("ID: " + apptId, 110, 65);
+            doc.text("Date: " + date, 110, 72);
+            doc.text("Status: " + newAppt.status, 110, 79);
+
+            // Table for Reason & Type
+            doc.autoTable({
+                startY: 95,
+                head: [['Booking Type', 'Medical Reason / Symptoms']],
+                body: [
+                    [type, reason]
+                ],
+                headStyles: { fillColor: [15, 23, 42] }, // Slate 900
+                theme: 'striped'
+            });
+
+            // Footer
+            const finalY = doc.previousAutoTable.finalY + 20;
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Please show this receipt at the reception desk on arrival.", 15, finalY);
+            doc.text("System generated by SafeScript AI.", 15, finalY + 7);
+
+            doc.save(apptId + "_SafeScript_" + name.replace(/\s+/g, '') + ".pdf");
+            
+            speak("Aapki appointment book ho gayi hai. PDF download ho gaya hai.");
+            alert("Appointment Booked Successfully! Request sent to the Clinic/Hospital Dashboard.");
+            
+            // Clear specific fields
+            document.getElementById('apptReason').value = "";
+            document.getElementById('apptDate').value = "";
+        }
+
+        window.addEventListener('load', loadUserProfile);
+
+        function uploadDP(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgData = e.target.result;
+                    document.getElementById('prof-dp').src = imgData;
+                    document.getElementById('user-display-dp').src = imgData;
+                    document.getElementById('prof-dp').classList.remove('hidden');
+                    document.getElementById('user-display-dp').classList.remove('hidden');
+                    document.getElementById('prof-dp-placeholder').classList.add('hidden');
+                    document.getElementById('user-display-icon').classList.add('hidden');
+
+                    if(currentUser) {
+                        currentUser.dp = imgData;
+                        localStorage.setItem('safescript_user', JSON.stringify(currentUser));
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function deleteDP() {
+            document.getElementById('prof-dp').src = '';
+            document.getElementById('user-display-dp').src = '';
+            document.getElementById('prof-dp').classList.add('hidden');
+            document.getElementById('user-display-dp').classList.add('hidden');
+            document.getElementById('prof-dp-placeholder').classList.remove('hidden');
+            document.getElementById('user-display-icon').classList.remove('hidden');
+
+            if(currentUser) {
+                currentUser.dp = "";
+                localStorage.setItem('safescript_user', JSON.stringify(currentUser));
+            }
+        }
+
+        function saveProfile() {
+            if(currentUser) {
+                currentUser.fullName = document.getElementById('prof-name').value;
+                currentUser.email = document.getElementById('prof-email').value;
+                localStorage.setItem('safescript_user', JSON.stringify(currentUser));
+                loadUserProfile();
+                alert('Profile Updated Successfully!');
+            }
+        }
+
+        function loadPatientStatusBoard() {
+            const statusContainer = document.getElementById('status-bars');
+            if(!statusContainer) return;
+
+            let html = '';
+            // Load Pharmacy Orders
+            let pOrders = JSON.parse(localStorage.getItem('safescript_patient_orders')) || [];
+            // Load Appointments
+            let appts = JSON.parse(localStorage.getItem('safescript_appointments')) || [];
+            
+            pOrders.forEach(o => {
+                let badgeClass = o.status === 'Approved' ? 'bg-emerald-100 text-emerald-600' : (o.status === 'Declined' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600');
+                html += `
+                <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pharmacy Order | ${o.time}</p>
+                        <p class="font-black text-slate-800">${o.medName}</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${badgeClass} mb-2">${o.status}</span>
+                        <button onclick="reDownloadPDF('Order', '${o.id}', '${o.medName}', '${o.time}')" class="text-teal-600 hover:text-teal-700 text-[10px] font-black underline"><i class="fas fa-file-pdf"></i> View PDF</button>
+                    </div>
+                </div>`;
+            });
+
+            appts.forEach(a => {
+                let badgeClass = a.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600';
+                html += `
+                <div class="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Appointment | ${a.type}</p>
+                        <p class="font-black text-slate-800">${a.reason}</p>
+                        <p class="text-[10px] text-slate-500 font-bold">${a.date}</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${badgeClass} mb-2">${a.status}</span>
+                        <button onclick="reDownloadPDF('Appt', '${a.id}', '${a.reason}', '${a.date}')" class="text-blue-600 hover:text-blue-700 text-[10px] font-black underline"><i class="fas fa-file-pdf"></i> View PDF</button>
+                    </div>
+                </div>`;
+            });
+
+            if(html === '') {
+                html = '<div class="p-6 text-center text-sm font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-2xl">No recent orders or appointments.</div>';
+            }
+            statusContainer.innerHTML = html;
+        }
+
+        function reDownloadPDF(type, id, title, time) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFillColor(type === 'Order' ? 13 : 37, type === 'Order' ? 148 : 99, type === 'Order' ? 136 : 235);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text(type === 'Order' ? "SafeScript AI - MEDICAL ORDER" : "SafeScript AI - APPOINTMENT", 15, 25);
+            
+            doc.setTextColor(40, 40, 40);
+            doc.setFontSize(12);
+            doc.text(`ID: ${id}`, 15, 50);
+            doc.text(`Details: ${title}`, 15, 60);
+            doc.text(`Date/Time: ${time}`, 15, 70);
+            doc.text(`Generated on Demand from Status Board`, 15, 80);
+            doc.save(`${id}_Duplicate.pdf`);
+        }
+
+        function addReminder() {
+            let title = document.getElementById('rem-title').value;
+            let date = document.getElementById('rem-date').value;
+            let time = document.getElementById('rem-time').value;
+            if(!title || !date || !time) return alert("Please fill all details for reminder!");
+
+            let rems = JSON.parse(localStorage.getItem('safescript_reminders')) || [];
+            rems.push({ id: Date.now(), title, date, time, done: false });
+            localStorage.setItem('safescript_reminders', JSON.stringify(rems));
+
+            document.getElementById('rem-title').value = '';
+            document.getElementById('rem-date').value = '';
+            document.getElementById('rem-time').value = '';
+            document.getElementById('add-reminder-form').classList.add('hidden');
+            loadReminders();
+            alert("Reminder set successfully!");
+        }
+
+        function loadReminders() {
+            let rems = JSON.parse(localStorage.getItem('safescript_reminders')) || [];
+            let list = document.getElementById('reminders-list');
+            if(!list) return;
+
+            if(rems.length === 0) {
+                list.innerHTML = `<p class="text-xs text-center text-slate-400 font-bold p-4 bg-slate-50 rounded-2xl">No reminders set.</p>`;
+                return;
+            }
+
+            list.innerHTML = rems.map(r => `
+                <div class="flex items-center gap-4 p-4 ${r.done ? 'bg-slate-50 border-slate-100 grayscale opacity-50' : 'bg-orange-50/50 border-orange-100'} rounded-2xl border transition-all">
+                    <div class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center ${r.done ? 'text-slate-400' : 'text-orange-500'}">
+                        <i class="fas fa-pills"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-800 ${r.done ? 'line-through' : ''}">${r.title}</p>
+                        <p class="text-[10px] text-slate-500 font-semibold">${r.date}</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <p class="font-black ${r.done ? 'text-slate-500' : 'text-orange-600'} text-xs mb-1">${r.time}</p>
+                        <input type="checkbox" ${r.done ? 'checked' : ''} onchange="toggleReminder(${r.id})" class="accent-orange-500 w-4 h-4 rounded">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleReminder(id) {
+            let rems = JSON.parse(localStorage.getItem('safescript_reminders')) || [];
+            let idx = rems.findIndex(r => r.id === id);
+            if(idx > -1) {
+                rems[idx].done = !rems[idx].done;
+                localStorage.setItem('safescript_reminders', JSON.stringify(rems));
+                loadReminders();
+            }
+        }
+
+        function loadAIStoreFiles() {
+            let files = JSON.parse(localStorage.getItem('safescript_ai_files')) || [];
+            let list = document.getElementById('ai-store-list');
+            if(!list) return;
+
+            if(files.length === 0) {
+                list.innerHTML = `<p class="text-[10px] text-center text-slate-400 font-bold p-3 bg-white rounded-xl">No files uploaded yet.</p>`;
+                return;
+            }
+
+            list.innerHTML = files.map(f => `
+                <div class="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-file-medical text-teal-600 text-lg"></i>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800 truncate w-32 md:w-48">${f.name}</p>
+                            <p class="text-[9px] text-slate-400 font-semibold">${f.date} • EHR via AI</p>
+                        </div>
+                    </div>
+                    <button onclick="removeAIFile(${f.id})" class="text-rose-500 bg-rose-50 p-2 rounded-lg hover:bg-rose-100 transition"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function removeAIFile(id) {
+            if(confirm("Permanently delete this document from Store?")) {
+                let files = JSON.parse(localStorage.getItem('safescript_ai_files')) || [];
+                files = files.filter(f => f.id !== id);
+                localStorage.setItem('safescript_ai_files', JSON.stringify(files));
+                loadAIStoreFiles();
+            }
+        }
+
+        function analyzeAndStoreFile() {
+            const fileInput = document.getElementById('ai-store-file');
+            if(!fileInput.files.length) {
+                alert("Please select a file to upload to the Store.");
+                return;
+            }
+            const file = fileInput.files[0];
+            const resultBox = document.getElementById('ai-file-result');
+            resultBox.innerHTML = `<span class="animate-pulse">SafeScript AI is analyzing and saving "${file.name}"...</span>`;
+            resultBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                let files = JSON.parse(localStorage.getItem('safescript_ai_files')) || [];
+                files.unshift({ id: Date.now(), name: file.name, date: new Date().toLocaleDateString() });
+                localStorage.setItem('safescript_ai_files', JSON.stringify(files));
+
+                resultBox.innerHTML = `
+                    <div class="text-teal-600 mb-2"><i class="fas fa-check-circle"></i> <b>File successfully analyzed and permanently stored (EHR via AI)</b></div>
+                    <p><b>AI Summary:</b> This document "${file.name}" appears to be related to medical records. It contains standard clinical data. We have safely secured it in your profile Store forever.</p>
+                `;
+                speak("Aapki file analyse ho chuki hai, aur permanent store me save kar di gayi hai.");
+                
+                document.getElementById('ai-store-file').value = '';
+                loadAIStoreFiles();
+                
+                setTimeout(() => { resultBox.classList.add('hidden'); }, 8000);
+            }, 3000);
+        }
+
+        // Make sure scripts run on startup along with profile
+        const originalLoad = window.onload;
+        window.onload = function() {
+            if(originalLoad) originalLoad();
+            loadUserProfile();
+            loadReminders();
+            loadAIStoreFiles();
+        };
+        function logout() {
+            if (confirm("Are you sure you want to logout? (Yes/No)")) {
+                window.location.href = "login.html.html";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeScript AI | Insurance Integrity Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f3f7fa; }
+        .trust-gradient { background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%); }
+    </style>
+</head>
+<body class="flex">
+
+    <aside class="w-72 bg-slate-900 h-screen sticky top-0 text-slate-300 p-6 flex flex-col">
+        <div class="mb-10">
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-blue-400"></i> SafeScript <span class="text-blue-400 font-light">Insurers</span>
+            </h1>
+        </div>
+        
+        <nav class="flex-1 space-y-2">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Main Menu</div>
+            <a href="#" class="flex items-center gap-3 bg-blue-600 text-white p-3 rounded-lg transition">
+                <i class="fa-solid fa-gauge-high"></i> Integrity Overview
+            </a>
+            <a href="#" class="flex items-center gap-3 hover:bg-slate-800 p-3 rounded-lg transition">
+                <i class="fa-solid fa-file-invoice-dollar"></i> Pending Claims
+            </a>
+            <a href="#" class="flex items-center gap-3 hover:bg-slate-800 p-3 rounded-lg transition">
+                <i class="fa-solid fa-user-secret"></i> Fraud Investigation
+            </a>
+            <a href="#" class="flex items-center gap-3 hover:bg-slate-800 p-3 rounded-lg transition">
+                <i class="fa-solid fa-hospital-user"></i> Provider Ratings
+            </a>
+            <a href="#" onclick="logout()" class="flex items-center gap-3 hover:bg-slate-800 hover:text-red-400 p-3 rounded-lg transition">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </nav>
+
+        <div class="bg-slate-800 p-4 rounded-xl mt-auto border border-slate-700">
+            <p class="text-xs text-slate-400">System Health</p>
+            <p class="text-sm font-semibold text-green-400">AI Engine: Online</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-8">
+        
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Claims Integrity Analysis</h2>
+                <p class="text-slate-500">Real-time fraud detection & policy verification</p>
+            </div>
+            <div class="flex gap-3">
+                <button class="px-5 py-2.5 border border-slate-200 bg-white rounded-lg text-sm font-semibold hover:bg-slate-50">Download Report</button>
+                <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold shadow-lg shadow-blue-200">New Audit Case</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm mb-1">Total Claims (24h)</p>
+                <div class="text-2xl font-bold text-slate-900">1,284</div>
+                <div class="mt-2 text-xs text-green-500 font-bold"><i class="fa-solid fa-arrow-up"></i> 4.2% vs yesterday</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm mb-1">Flagged for Fraud</p>
+                <div class="text-2xl font-bold text-red-600">42</div>
+                <div class="mt-2 text-xs text-red-400 font-bold">High Risk Detected</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm mb-1">Auto-Approved</p>
+                <div class="text-2xl font-bold text-green-600">89%</div>
+                <div class="mt-2 text-xs text-slate-400 font-medium">Fast-track processing</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-500 text-sm mb-1">Revenue Saved</p>
+                <div class="text-2xl font-bold text-blue-600">₹12.4L</div>
+                <div class="mt-2 text-xs text-blue-400 font-medium">FWA prevention</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 uppercase text-xs tracking-wider">Claims Requiring Manual Review</h3>
+                    <span class="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold">Action Required</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50">
+                            <tr class="text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                                <th class="px-6 py-4">Claim ID</th>
+                                <th class="px-6 py-4">Issue Detected</th>
+                                <th class="px-6 py-4 text-center">Trust Score</th>
+                                <th class="px-6 py-4 text-right">Amount</th>
+                                <th class="px-6 py-4"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50/50 transition cursor-pointer">
+                                <td class="px-6 py-4 font-semibold text-slate-700 text-sm">#CLM-8902</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                        <span class="text-xs text-red-600 font-bold">Potential Upcoding</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Brand name requested over generic</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span class="text-sm font-bold text-orange-500">0.52</span>
+                                        <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-orange-500" style="width: 52%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-slate-700">₹8,450</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-tighter">Audit Now</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-50/50 transition cursor-pointer">
+                                <td class="px-6 py-4 font-semibold text-slate-700 text-sm">#CLM-8941</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                                        <span class="text-xs text-orange-600 font-bold">Duplicate (14d)</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">Claimed at Patna Pharmacy & Online</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span class="text-sm font-bold text-red-600">0.34</span>
+                                        <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-red-600" style="width: 34%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right text-sm font-bold text-slate-700">₹1,200</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-tighter">Audit Now</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm mb-1">Integrity Distribution</h3>
+                    <p class="text-xs text-slate-400 mb-6">Claim trust scores across network</p>
+                </div>
+                
+                <div class="relative h-48 flex items-center justify-center">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-4xl font-extrabold text-green-500">0.88</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Avg Trust</span>
+                    </div>
+                    <svg class="w-40 h-40 transform -rotate-90">
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100" />
+                        <circle cx="80" cy="80" r="70" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="440" stroke-dashoffset="52" class="text-green-500" />
+                    </svg>
+                </div>
+
+                <div class="space-y-3 mt-6">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500">High Risk (< 0.4)</span>
+                        <span class="font-bold text-red-500">12</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500">Medium Risk (0.4-0.7)</span>
+                        <span class="font-bold text-orange-500">84</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500">Low Risk (> 0.7)</span>
+                        <span class="font-bold text-green-500">1,188</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            if (confirm("Are you sure you want to logout? (Yes/No)")) {
+                window.location.href = "login.html.html";
+            }
+        }
+    </script>
+</body>
+</html>
